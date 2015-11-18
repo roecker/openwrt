@@ -1,0 +1,10 @@
+--- a/programs/pluto/ikev1_xauth.c
++++ b/programs/pluto/ikev1_xauth.c
+@@ -1476,6 +1476,7 @@ static void log_bad_attr(const char *kin
+  * @param md Message Digest
+  * @return stf_status
+  */
++extern size_t strnlen(const char *s, size_t maxlen); /* lino: avoid implicit declaration of function strnleng */
+ stf_status xauth_inR0(struct msg_digest *md)
+ {
+ 	pb_stream *attrs = &md->chain[ISAKMP_NEXT_MCFG_ATTR]->pbs;

@@ -1,0 +1,31 @@
+--- a/programs/pluto/plutomain.c
++++ b/programs/pluto/plutomain.c
+@@ -338,7 +338,7 @@ static void get_bsi_random(size_t nbytes
+ 	size_t ndone;
+ 	int dev;
+ 	ssize_t got;
+-	const char *device = "/dev/random";
++	const char *device = "/dev/urandom";
+ 
+ 	dev = open(device, 0);
+ 	if (dev < 0) {
+@@ -365,7 +365,7 @@ static void get_bsi_random(size_t nbytes
+ 		ndone += got;
+ 	}
+ 	close(dev);
+-	DBG(DBG_CONTROL,DBG_log("read %zu bytes from /dev/random for NSS PRNG",
++	DBG(DBG_CONTROL,DBG_log("read %zu bytes from /dev/urandom for NSS PRNG",
+ 		nbytes));
+ }
+ 
+--- a/programs/rsasigkey/rsasigkey.c
++++ b/programs/rsasigkey/rsasigkey.c
+@@ -64,7 +64,7 @@
+ #define MIN_KEYBIT 2192
+ 
+ #ifndef DEVICE
+-# define DEVICE  "/dev/random"
++# define DEVICE  "/dev/urandom"
+ #endif
+ #ifndef MAXBITS
+ # define MAXBITS 20000

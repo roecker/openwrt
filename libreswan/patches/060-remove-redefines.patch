@@ -1,0 +1,13 @@
+--- a/programs/pluto/adns.c
++++ b/programs/pluto/adns.c
+@@ -174,10 +174,8 @@ static enum helper_exit_status write_pip
+ 
+ #ifdef OLD_RESOLVER
+ 
+-# define res_ninit(statp) res_init()
+ # define res_nquery(statp, dname, class, type, answer, anslen) \
+ 	res_query(dname, class, type, answer, anslen)
+-# define res_nclose(statp) res_close()
+ 
+ # define statp  ((struct __res_state *)(&_res))
+ 

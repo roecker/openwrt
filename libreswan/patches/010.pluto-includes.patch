@@ -1,0 +1,24 @@
+--- a/programs/pluto/Makefile
++++ b/programs/pluto/Makefile
+@@ -49,7 +49,7 @@ endif
+ 
+ # where to find klips headers and Libreswan headers
+ # and 2.6 kernel's <rtnetlink.h> and <xfrm.h>
+-HDRDIRS = -I${LIBRESWANSRCDIR}/programs/pluto/linux26 -I${LIBRESWANSRCDIR}/include -I$(LIBRESWANSRCDIR)/lib/libcrypto -I$(KLIPSINC)
++HDRDIRS = -I${LIBRESWANSRCDIR}/programs/pluto/linux26 -I${LIBRESWANSRCDIR}/include -I$(LIBRESWANSRCDIR)/lib/libcrypto -I$(KLIPSINC)  $(EXTRA_INCLUDE)
+ 
+ 
+ # BYTE_ORDER = -DBIG_ENDIAN=4321 -DLITTLE_ENDIAN=1234 -DBYTE_ORDER=BIG_ENDIAN
+@@ -226,10 +226,10 @@ LIBSPLUTO+=$(X509_LIBS)
+ LIBSPLUTO+=$(THREADS_LIBS)
+ LIBSPLUTO+=${CURL_LIBS}
+ LIBSPLUTO+=${EXTRA_CRYPTO_LIBS} ${LABELED_IPSEC_LIBS}
+-LIBSPLUTO+=${WHACKLIB} ${BSDKAME_LIBS} ${NSSLIBS}
++LIBSPLUTO+=${WHACKLIB} ${BSDKAME_LIBS} ${NSSLIBS} $(EXTRA_LIBS)
+ PLUTOMINUSL+= ${X509_LLIBS} ${CURL_LLIBS} ${THREADS_LLIBS}
+ PLUTOMINUSL+= ${XAUTH_LLIBS} ${XAUTHPAM_LIBS} ${NSSLIBS}
+-PLUTOMINUSL+= ${LIBCRYPT} -lgmp #-lefence
++PLUTOMINUSL+= ${LIBCRYPT} -lnspr4 -lgmp #-lefence
+ 
+ # For avoiding implicit DSO linking
+ LIBSPLUTO+= -lpthread

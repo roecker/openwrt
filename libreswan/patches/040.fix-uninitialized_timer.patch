@@ -1,0 +1,13 @@
+--- a/programs/pluto/timer.c
++++ b/programs/pluto/timer.c
+@@ -450,9 +450,9 @@ static void liveness_check(struct state
+ static void ikev2_log_v2_sa_expired (struct state *st, enum event_type type)
+ {
+ 	struct connection *c = st->st_connection;
+-	deltatime_t last_used_age;
+ 
+ 	DBG(DBG_LIFECYCLE, {
++            deltatime_t last_used_age = { 0 };
+ 			char story[80] = "";
+ 			if (type == EVENT_v2_SA_REPLACE_IF_USED) {
+ 			snprintf(story, sizeof(story),
