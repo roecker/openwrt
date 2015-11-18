@@ -1,0 +1,11 @@
+# nspr.pc -- pkg-config data for libnspr
+prefix=PREFIX
+exec_prefix=EXEC_PREFIX
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: nss
+Description: Mozillas Netscape Portable Runtime
+Version: VERSION
+Libs: -L$/usr/lib -lplds4 -lplc4 -lnspr4 -ldl
+Cflags: -I${includedir}/nspr4

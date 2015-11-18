@@ -1,0 +1,12 @@
+# nss.pc -- pkg-config data for libnss
+prefix=PREFIX
+exec_prefix=EXEC_PREFIX
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: nss
+Description: Mozillas Network Security Services Library
+Version: VERSION
+Requires:
+Libs: -L${libdir} -lnss3 -lnspr4 -lnssutil3
+Cflags: -I${includedir}/libnss
