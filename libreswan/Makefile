@@ -21,7 +21,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/libreswan/Default
   TITLE:=Libreswan
   URL:=http://www.libreswan.org/
-  DEPENDS:=@LINUX_3_3
+  DEPENDS:=@LINUX_3_3||@LINUX_3_10||@LINUX_3_13||@LINUX_3_14||@LINUX_3_18
 endef
 
 define Package/libreswan/Default/description
