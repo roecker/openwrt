@@ -1,0 +1,200 @@
+#!/bin/sh /etc/rc.common
+#
+# latest changes: Mi 27 Mai 2015 17:36:38 CEST
+###############################################
+
+. /lib/network
+. /lib/functions/riab.sh
+
+START=65
+
+SERVICE_USE_PID=1
+##
+
+log() {
+    logger -t dhcp-fwd "$@"
+}
+
+BASEBOARD=$(/usr/bin/getbaseboard.sh -l)
+bridgemode=""
+riab_get_bridge_mode bridgemode
+riab_get_device landev
+riab_get_device extdev
+
+##
+# PARAMETER:
+#   $1: iface (lan, ext)
+# RETURN-CODE:
+#   true: if already running
+#   false: if not running
+already_running() {
+    local iface=$1
+    local pidfile="/var/run/dhcp-fwd-$iface.pid"
+
+    if ! [ -e $pidfile ]; then
+        return 1
+    fi
+    local pid="$(cat $pidfile)"
+
+    log "hmm... pidfile already exists"
+
+    if ps -p $pid >/dev/null 2>&1; then
+        log "process still running. Nothing to do here."
+        return 0
+    else
+        log "no process found for this pidfile. Stale lockfile detected"
+        return 1
+    fi
+}
+
+
+setup_environment() {
+    # iface=$1
+    RUN_D=/tmp/dhcp-fwd/$1
+    LOG_D=/var/run
+
+    [ -d $RUN_D ] || mkdir -p $RUN_D
+    [ -d $LOG_D ] || mkdir -p $LOG_D
+}
+
+
+generate_config() {
+    local iface="$1"
+    local dev
+
+    if [ "$iface" == "lan" ]; then
+		if [ "$bridgemode" == "lan" ]; then
+			dev="br-lan"
+		else
+			dev=$landev
+		fi
+    elif [ "$iface" == "ext" ]; then
+        # (ext)dev=eth1
+		dev=$extdev
+    else
+		log "could not determine interface name. aborting!"
+		exit 1
+    fi
+    log "setting up dhcp-relay on $iface ($dev)"
+
+    server_ip=$2
+    cfg="/var/etc/dhcp-fwd-${iface}.conf"
+
+    # before we begin
+    mkdir -p $(dirname $cfg)
+    echo "# auto-generated config file from /etc/config/dhcp" > $cfg
+
+    echo -e "user \t\t dhcp-fwd" >> $cfg
+    echo -e "group \t\t dhcp-fwd" >> $cfg
+    echo -e "chroot \t\t /tmp/dhcp-fwd/$iface" >> $cfg
+    echo -e "logfile \t /var/log/dhcp-fwd-$iface.log" >> $cfg
+    echo -e "pidfile \t /var/run/dhcp-fwd-$iface.pid\n" >> $cfg
+
+    echo -e "ulimit core   \t 0" >> $cfg
+    echo -e "ulimit stack  \t 64K" >> $cfg
+    echo -e "ulimit data   \t 32K" >> $cfg
+    echo -e "ulimit rss    \t 200K" >> $cfg
+    echo -e "ulimit nproc  \t 0" >> $cfg
+    echo -e "ulimit nofile \t 0" >> $cfg
+    echo -e "ulimit as     \t 0\n" >> $cfg
+
+    echo -e "#  name   clients  servers  broadcasts" >> $cfg
+	##
+	# if not in bridge mode write both interfaces to config when on both
+	# is running an relay. Otherwise it would not be possible to use the
+	# same remote dhcp-server for both relay processes.
+	# If running only on one interface, write only one interface to config.
+	# Otherwise we run into problems when a dhcp-server is configured on the
+	# other interface.
+	if [ "$bridgemode" != "lan" ] && [ $(uci show dhcp| grep -c dhcpv4=relay) -eq 2 ]; then
+		echo -e "if $landev  true	false		true" >> $cfg
+		echo -e "if $extdev  true	false		true" >> $cfg
+	else
+		echo -e "if $dev  true	false		true" >> $cfg
+	fi
+    ##
+    echo -e "if ipsec0  false    true      true\n" >> $cfg
+
+    echo -e "# forward DHCP-Requests to this server (ip-address)" >> $cfg
+    echo -e "server ip $server_ip" >> $cfg
+
+    log "forwarding DHCP-requests to $server_ip"
+}
+
+handle_interfaces() {
+    # get sections from dhcp
+    local zone="$1"
+	local ifname=$(echo ${zone}dev)
+
+    # now lets have a look into the configfile
+    # get 'option dhcpv4' from interface '$zone' and
+    # write its content to $type!
+    local type
+    config_get type "$zone" dhcpv4
+
+    local server_ip
+	local ip
+    config_get server_ip "$zone" dhcp_server_ip
+
+    ##
+    if [ "$zone" != "wan" ] && [ "$type" == "relay" ] && [ "$zone" ]; then
+        # check first if another process is already running on this interface
+        if already_running $zone; then
+            continue
+        fi
+
+		##
+        # create configfile
+        generate_config $zone $server_ip
+
+		##
+        # create chroot-env
+        setup_environment $zone
+
+        # start relay server
+        dhcp-fwd -c $cfg || log "failed to start 'dhcp-fwd -c $cfg'"
+    fi
+}
+
+##
+#
+#
+start() {
+    # quit if no dhcp-relay has been configured
+    if ! uci show dhcp | grep -q dhcp.*.dhcpv4=relay; then
+        log "Neither LAN nor EXT has been configured as DHCP-Relay."
+        exit 1
+    fi
+
+    config_load dhcp
+
+    # $1: function to call
+    # $2: name of config to handle in this function
+    config_foreach handle_interfaces dhcp
+
+}
+
+##
+#
+#
+restart() {
+    stop
+    start
+}
+
+##
+#
+#
+stop() {
+    local PIDS=$(pgrep -u dhcp-fwd dhcp-fwd)
+
+    for p in $PIDS; do
+        log "sending dhcp-fwd (pid: $p) the TERM signal"
+        kill $p
+    done
+
+    log "cleaning up..."
+    rm -f /var/etc/dhcp-fwd-*.conf
+    rm -f /var/run/dhcp-fwd-*.pid
+}
+
