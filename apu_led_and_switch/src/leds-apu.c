@@ -168,19 +168,14 @@ static int apu_led_probe(struct platform_device *pdev)
 
 static int apu_led_remove(struct platform_device *pdev)
 {
-#ifdef APU_BUTTON
-	int ret;
-#endif
 	led_classdev_unregister(&apu_led_1);
 	led_classdev_unregister(&apu_led_2);
 	led_classdev_unregister(&apu_led_3);
 
 #ifdef APU_BUTTON
-	ret = gpiochip_remove(&apu_gpio_button);
-	return ret;
-#else
-	return 0;
+	gpiochip_remove(&apu_gpio_button);
 #endif
+    return 0;
 }
 
 static struct platform_driver apu_led_driver = {
